@@ -74,6 +74,6 @@ class KeywordEnsemble(ClassifierMixin, BaseEstimator, ABC):
         """Мягкое голосование, форма ``(n_samples, n_classes)``."""
 
     def predict(self, X) -> NDArray:
-        """Метка класса с максимальной усреднённой вероятностью."""
+        """Метка класса с максимальной вероятностью после голосования голов."""
         proba = self.predict_proba(X)
         return self.classes_[np.argmax(proba, axis=1)]

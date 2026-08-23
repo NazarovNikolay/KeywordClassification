@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "keyword-classification"
 version = "0.1.0"
-description = "Keyword-based text classification ensembles (KRSB and related methods)"
+description = "Keyword-based text classification ensembles (KRSB, HomEns and related methods)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
@@ -22,4 +22,4 @@ bert = ["torch", "transformers"]
 dev = ["pytest"]
 
 [tool.setuptools.packages.find]
-include = ["KRSB*"]
+include = ["KRSB*", "HomEns*"]
