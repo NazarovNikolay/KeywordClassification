@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "keyword-classification"
+version = "0.1.0"
+description = "Keyword-based text classification ensembles (KRSB and related methods)"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+extractors = ["yake", "rake-nltk", "nltk"]
+bert = ["torch", "transformers"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["KRSB*"]
