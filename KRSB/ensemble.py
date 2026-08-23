@@ -1,4 +1,4 @@
-"""Keyword Random Subspace Bagging (KRSB) ensemble."""
+"""Ансамбль KRSB: Keyword Random Subspace Bagging."""
 
 from __future__ import annotations
 
@@ -17,19 +17,18 @@ from .sampling import sample_keywords_for_row
 
 
 class KRSB(KeywordEnsemble):
-    """Ensemble of lightweight heads over random keyword subspaces.
+    """Лес лёгких голов над случайными подпространствами ключевых слов.
 
-    Each estimator:
+    Каждая голова:
 
-    1. Draws a bootstrap of documents.
-    2. For every document, samples a random subset of extractors and
-       ``total_k`` keyphrases (the original KRSB sampler).
-    3. Encodes the resulting keyword-text.
-    4. Fits a cheap classifier (logistic regression by default).
+    1. Берёт bootstrap документов.
+    2. Для каждого документа сэмплирует подмножество экстракторов и ``total_k`` фраз.
+    3. Кодирует получившийся keyword-текст.
+    4. Учит дешёвый классификатор (по умолчанию логистическая регрессия).
 
-    Prediction averages class probabilities (soft voting). Extractor tags
-    such as ``[YAKE]`` are kept so a neural encoder can see which method
-    produced each phrase — same protocol as the SciBERT notebooks.
+    Предсказание — среднее вероятностей (soft voting). Теги вроде ``[YAKE]``
+    оставляем, чтобы нейросетевой энкодер видел источник фразы — тот же
+    протокол, что в SciBERT-ноутбуках.
     """
 
     def __init__(
@@ -61,6 +60,7 @@ class KRSB(KeywordEnsemble):
         self.encode_batch_size = encode_batch_size
 
     def fit(self, X, y):
+        """Обучить лес по ``KeywordBank`` или по сырым текстам (если заданы extractors)."""
         bank = self._as_bank(X, fit_extractors=True)
         y = np.asarray(y)
         if len(y) != bank.n_docs:
@@ -97,6 +97,7 @@ class KRSB(KeywordEnsemble):
         return self
 
     def predict_proba(self, X) -> NDArray[np.float64]:
+        """Усреднить вероятности голов; каждая голова заново собирает свой keyword-текст."""
         if not getattr(self, "heads_", None):
             raise RuntimeError("KRSB must be fitted before predict_proba")
         bank = self._as_bank(X, fit_extractors=False)
@@ -109,12 +110,13 @@ class KRSB(KeywordEnsemble):
             proba_sum += self._align_proba(clf, clf.predict_proba(features))
         return proba_sum / len(self.heads_)
 
-    # Alias used in the original notebooks.
     @property
     def heads(self):
+        """Список ``(est_seed, classifier, encoder)`` — как ``heads`` в исходных ноутбуках."""
         return getattr(self, "heads_", [])
 
     def _encoder_for_head(self, texts: Sequence[str]) -> Encoder:
+        """Общий энкодер для BERT, clone+fit для векторизаторов со словарём."""
         encoder = self.encoder
         if encoder is None:
             raise RuntimeError("encoder is not set")
@@ -124,6 +126,7 @@ class KRSB(KeywordEnsemble):
         return cloned.fit(texts)
 
     def _make_texts(self, bank: KeywordBank, est_seed: int) -> list[str]:
+        """Собрать keyword-тексты документов; seed головы фиксирует подпространство."""
         texts: list[str] = []
         for i in range(len(bank)):
             rng = random.Random(est_seed * 1_000_003 + i * 1_000_033)
@@ -141,6 +144,7 @@ class KRSB(KeywordEnsemble):
         return texts
 
     def _align_proba(self, clf, proba) -> NDArray[np.float64]:
+        """Выровнять ``predict_proba`` головы к глобальному ``classes_`` (bootstrap может не видеть класс)."""
         aligned = np.zeros((proba.shape[0], len(self.classes_)), dtype=np.float64)
         for src, label in enumerate(clf.classes_):
             dst = self._class_to_idx_.get(label)
@@ -149,6 +153,7 @@ class KRSB(KeywordEnsemble):
         return aligned
 
     def _as_bank(self, X, fit_extractors: bool) -> KeywordBank:
+        """Принять готовый KeywordBank или извлечь ключевые слова из сырых текстов."""
         if isinstance(X, KeywordBank):
             return X
         if not self.extractors:

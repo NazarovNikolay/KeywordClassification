@@ -1,4 +1,10 @@
-"""KRSB: Keyword Random Subspace Bagging for text classification."""
+"""KRSB — Keyword Random Subspace Bagging.
+
+Ансамбль классификации текстов по ключевым словам: несколько экстракторов
+строят представления документа, каждая голова леса берёт bootstrap документов
+и случайное подпространство методов, кодирует получившийся keyword-текст
+и голосует вероятностями класса.
+"""
 
 from .bank import KeywordBank
 from .base import Encoder, KeywordEnsemble, KeywordExtractor

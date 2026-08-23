@@ -1,4 +1,4 @@
-"""Tabular store of per-document keyphrases from several extractors."""
+"""Таблица ключевых фраз: один столбец на экстрактор, одна строка на документ."""
 
 from __future__ import annotations
 
@@ -11,11 +11,10 @@ from .sampling import ensure_keyword_list
 
 
 class KeywordBank:
-    """Aligned keyword lists for ``n`` documents and one or more extractors.
+    """Выровненные списки keyphrases для ``n`` документов и нескольких методов.
 
-    This is the common input format for ensembles: each method name maps to
-    a list of length ``n_docs``, and every inner list is that document's
-    ranked keyphrases.
+    Это общий вход для ансамблей: имя метода → список длины ``n_docs``,
+    внутри — ранжированные фразы конкретного документа.
     """
 
     def __init__(
@@ -40,10 +39,12 @@ class KeywordBank:
 
     @property
     def method_names(self) -> list[str]:
+        """Имена экстракторов в порядке столбцов."""
         return list(self.keywords)
 
     @property
     def n_docs(self) -> int:
+        """Число документов (длина любого столбца)."""
         first = next(iter(self.keywords.values()))
         return len(first)
 
@@ -51,9 +52,11 @@ class KeywordBank:
         return self.n_docs
 
     def row(self, index: int) -> dict[str, list[str]]:
+        """Срезать все методы для одного документа: ``{method: [phrases...]}``."""
         return {name: values[index] for name, values in self.keywords.items()}
 
     def subset(self, indices: Sequence[int]) -> KeywordBank:
+        """Новый банк по списку индексов (с повторами — для bootstrap)."""
         idx = list(indices)
         keywords = {name: [rows[i] for i in idx] for name, rows in self.keywords.items()}
         texts = None if self.texts is None else [self.texts[i] for i in idx]
@@ -67,6 +70,7 @@ class KeywordBank:
         top_n: int = 15,
         show_progress: bool = True,
     ) -> KeywordBank:
+        """Прогнать экстракторы по корпусу и собрать банк."""
         if not extractors:
             raise ValueError("Provide at least one KeywordExtractor")
         keywords: dict[str, list[list[str]]] = {}

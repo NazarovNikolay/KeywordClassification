@@ -1,10 +1,9 @@
-"""KRSB on 20 Newsgroups with YAKE, RAKE and TopicRank.
+"""Пример KRSB на 20 Newsgroups: YAKE, RAKE и TopicRank.
 
-Downloads the dataset automatically via scikit-learn, extracts keyphrases
-with three unsupervised methods, then fits Keyword Random Subspace Bagging
-(a forest of logistic heads over random keyword subspaces).
+Датасет скачивается через scikit-learn. Три экстрактора строят KeywordBank,
+затем лес логистических голов голосует по случайным подпространствам фраз.
 
-Run from the repository root::
+Запуск из корня репозитория::
 
     pip install -e .[extractors]
     python examples/krsb_20newsgroups.py
@@ -37,6 +36,7 @@ RANDOM_STATE = 42
 
 
 def load_subset():
+    """Скачать 20 Newsgroups и взять по ``SAMPLES_PER_CLASS`` документов на класс."""
     data = fetch_20newsgroups(
         subset="all",
         categories=CATEGORIES,

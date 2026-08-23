@@ -1,3 +1,5 @@
+"""Тесты сэмплера, KeywordBank и леса KRSB на синтетических документах."""
+
 from __future__ import annotations
 
 import unittest
@@ -13,6 +15,7 @@ from KRSB.sampling import sample_keywords_for_row
 
 
 class DummyExtractor(KeywordExtractor):
+    """Детерминированный экстрактор: оставляет только слова из заданного словаря."""
     def __init__(self, name: str, tag: str, vocab: list[str]):
         self.name = name
         self.tag = tag

@@ -1,4 +1,4 @@
-"""Shared abstractions for keyword-based classification ensembles."""
+"""Общие абстракции для ансамблей классификации по ключевым словам."""
 
 from __future__ import annotations
 
@@ -11,11 +11,11 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 
 
 class KeywordExtractor(ABC):
-    """Turns a document into an ordered list of keyphrases.
+    """Экстрактор ключевых фраз: документ → упорядоченный список keyphrases.
 
-    Concrete extractors (YAKE, RAKE, TopicRank, LLM prompts, ...) only need
-    to implement :meth:`extract`. Batch extraction has a default loop that
-    subclasses may override for vectorization or caching.
+    Достаточно реализовать :meth:`extract`. Пакетный :meth:`extract_many`
+    по умолчанию просто вызывает его в цикле; его можно переопределить,
+    если метод умеет работать сразу по корпусу (например TF-IDF).
     """
 
     name: str
@@ -23,7 +23,7 @@ class KeywordExtractor(ABC):
 
     @abstractmethod
     def extract(self, text: str, top_n: int = 15) -> list[str]:
-        """Return up to ``top_n`` keyphrases for a single document."""
+        """Вернуть не более ``top_n`` ключевых фраз одного документа."""
 
     def extract_many(
         self,
@@ -31,6 +31,7 @@ class KeywordExtractor(ABC):
         top_n: int = 15,
         show_progress: bool = True,
     ) -> list[list[str]]:
+        """Извлечь ключевые фразы для списка документов."""
         iterator: Sequence[str] = texts
         if show_progress:
             try:
@@ -43,34 +44,36 @@ class KeywordExtractor(ABC):
 
 
 class Encoder(ABC):
-    """Maps keyword-texts (or any strings) to a feature matrix.
+    """Преобразует keyword-тексты (или любые строки) в матрицу признаков.
 
-    Frozen neural encoders set ``shared=True`` so the ensemble reuses one
-    copy. Fitted vectorizers set ``shared=False`` so each forest head gets
-    its own clone and vocabulary.
+    Замороженный нейросетевой энкодер помечают ``shared=True`` — лес
+    переиспользует один экземпляр. Векторизаторы с обучением словаря
+    оставляют ``shared=False``: каждая голова получает свой clone.
     """
 
     shared: bool = False
 
     def fit(self, texts: Sequence[str]) -> Encoder:
+        """Подогнать энкодер по текстам. Для замороженных моделей — no-op."""
         return self
 
     @abstractmethod
     def encode(self, texts: Sequence[str], batch_size: int = 64):
-        """Return a 2-D array or sparse matrix of shape ``(n_texts, n_features)``."""
+        """Матрица ``(n_texts, n_features)`` — плотная ndarray или sparse."""
 
 
 class KeywordEnsemble(ClassifierMixin, BaseEstimator, ABC):
-    """Sklearn-style classifier that votes over keyword views of documents."""
+    """Sklearn-классификатор, который голосует по keyword-представлениям документов."""
 
     @abstractmethod
     def fit(self, X, y):
-        """Fit on raw texts (``Sequence[str]``) or a :class:`~KRSB.bank.KeywordBank`."""
+        """Обучить на сырых текстах или на :class:`~KRSB.bank.KeywordBank`."""
 
     @abstractmethod
     def predict_proba(self, X) -> NDArray[np.float64]:
-        """Soft votes, shape ``(n_samples, n_classes)``."""
+        """Мягкое голосование, форма ``(n_samples, n_classes)``."""
 
     def predict(self, X) -> NDArray:
+        """Метка класса с максимальной усреднённой вероятностью."""
         proba = self.predict_proba(X)
         return self.classes_[np.argmax(proba, axis=1)]

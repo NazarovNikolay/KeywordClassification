@@ -1,4 +1,4 @@
-"""Text encoders that turn keyword-strings into feature matrices."""
+"""Энкодеры: keyword-строка → матрица признаков для голов ансамбля."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from .base import Encoder
 
 
 class TfidfEncoder(BaseEstimator, Encoder):
-    """Hashable bag-of-n-grams encoder. Each forest head typically clones it."""
+    """Мешок n-грамм по keyword-тексту. Каждая голова обычно клонирует свой экземпляр."""
 
     shared = False
 
@@ -40,7 +40,7 @@ class TfidfEncoder(BaseEstimator, Encoder):
 
 
 class BertEncoder(Encoder):
-    """Frozen HuggingFace encoder; CLS pooling, same as the original KRSB notebooks."""
+    """Замороженный HuggingFace-энкодер, CLS-пулинг — как в исходных ноутбуках KRSB."""
 
     shared = True
 

@@ -1,4 +1,4 @@
-"""Random keyword-subspace sampling used by KRSB heads."""
+"""Сэмплирование случайного подпространства ключевых фраз для одной головы KRSB."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Mapping, Sequence
 
 
 def ensure_keyword_list(value) -> list[str]:
-    """Normalize a cell of keywords to a cleaned list of strings."""
+    """Привести ячейку (list / строка / NaN) к списку непустых фраз."""
     if value is None:
         return []
     if isinstance(value, float) and value != value:  # NaN
@@ -24,6 +24,7 @@ def ensure_keyword_list(value) -> list[str]:
 
 
 def unique_keep_order(keywords: Sequence[str]) -> list[str]:
+    """Убрать дубликаты без учёта регистра, сохранив исходный порядок (ранг)."""
     seen: set[str] = set()
     unique: list[str] = []
     for keyword in keywords:
@@ -45,16 +46,16 @@ def sample_keywords_for_row(
     add_method_tags: bool = True,
     method_tags: Mapping[str, str] | None = None,
 ) -> str:
-    """Build one keyword-text for a document, matching the original KRSB sampler.
+    """Собрать keyword-текст одного документа для конкретной головы.
 
-    Steps (same as the SciBERT notebooks):
+    Алгоритм тот же, что в исходных SciBERT-ноутбуках:
 
-    1. Shuffle extractor names and keep ``methods_per_model`` of them.
-    2. Deduplicate each method's list while preserving rank order.
-    3. Split ``total_k`` across the chosen methods, at least ``per_method_min`` each.
-    4. Sample without replacement from every method pool.
-    5. Optionally prefix phrases with a method tag such as ``[YAKE]``.
-    6. Shuffle the mixed phrases and join them with ``"; "``.
+    1. Перемешать имена экстракторов и оставить ``methods_per_model``.
+    2. Дедуплицировать пул каждого метода, сохранив порядок.
+    3. Разделить бюджет ``total_k`` по выбранным методам (не меньше ``per_method_min``).
+    4. Сэмплировать без возвращения из пула каждого метода.
+    5. При необходимости префиксовать фразы тегом источника, например ``[YAKE]``.
+    6. Перемешать смешанный список и склеить через ``"; "``.
     """
     tags = dict(method_tags or {})
     cols = list(method_names)

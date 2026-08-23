@@ -1,4 +1,4 @@
-"""Keyword extractors used to build the views of a KRSB forest."""
+"""Экстракторы ключевых фраз — источники разнообразия для леса KRSB."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ _MAX_CHARS = 4000
 
 
 def _truncate(text: str, max_chars: int = _MAX_CHARS) -> str:
+    """Обрезать длинные документы, чтобы YAKE/RAKE не раздували время."""
     text = (text or "").strip()
     if len(text) <= max_chars:
         return text
@@ -27,7 +28,7 @@ def _tokens(text: str) -> list[str]:
 
 
 class YakeExtractor(KeywordExtractor):
-    """YAKE statistical keyphrase extractor."""
+    """Статистический экстрактор YAKE (нужен пакет ``yake``)."""
 
     name = "yake"
     tag = "[YAKE]"
@@ -36,7 +37,6 @@ class YakeExtractor(KeywordExtractor):
         self.language = language
         self.ngram = ngram
         self.window_size = window_size
-        self._extractor = None
 
     def _get_extractor(self, top_n: int):
         try:
@@ -56,13 +56,13 @@ class YakeExtractor(KeywordExtractor):
         if not text:
             return []
         extractor = self._get_extractor(top_n)
-        # YAKE returns (phrase, score) with lower score = more important.
+        # У YAKE меньше score — важнее фраза.
         scored = extractor.extract_keywords(text)
         return [phrase for phrase, _score in scored[:top_n]]
 
 
 class RakeExtractor(KeywordExtractor):
-    """RAKE keyphrase extractor (rake-nltk)."""
+    """RAKE через ``rake-nltk``; при первом вызове скачивает ресурсы NLTK."""
 
     name = "rake"
     tag = "[RAKE]"
@@ -111,11 +111,11 @@ class RakeExtractor(KeywordExtractor):
 
 
 class TopicRankExtractor(KeywordExtractor):
-    """Simplified TopicRank: cluster n-gram candidates and rank topics.
+    """TopicRank: кластеризация кандидатов и PageRank по темам.
 
-    If ``pke`` is installed the original TopicRank implementation is used.
-    Otherwise a lightweight graph fallback (token n-grams + PageRank) runs
-    with no extra dependencies beyond scikit-learn.
+    По умолчанию работает упрощённый графовый вариант (n-граммы + Jaccard +
+    PageRank) без лишних зависимостей. Оригинальный TopicRank из ``pke``
+    включается флагом ``use_pke=True``.
     """
 
     name = "topicrank"
@@ -165,7 +165,7 @@ class TopicRankExtractor(KeywordExtractor):
                 if phrase not in freq:
                     order.append(phrase)
                 freq[phrase] = freq.get(phrase, 0) + 1
-        # Cap the graph size so TopicRank stays usable on long 20 Newsgroups posts.
+        # Ограничиваем граф, иначе длинные посты 20 Newsgroups слишком тяжёлые.
         ranked = sorted(order, key=lambda p: (-freq[p], len(p.split()), p))
         candidates = ranked[:80]
         if not candidates:
@@ -186,9 +186,9 @@ class TopicRankExtractor(KeywordExtractor):
                 weights[i][j] = w
                 weights[j][i] = w
         ranks = _pagerank(weights)
-        order = sorted(range(n_topics), key=lambda i: ranks[i], reverse=True)
+        topic_order = sorted(range(n_topics), key=lambda i: ranks[i], reverse=True)
         phrases: list[str] = []
-        for topic_i in order:
+        for topic_i in topic_order:
             representative = min(clusters[topic_i], key=lambda p: positions.get(p, math.inf))
             phrases.append(representative)
             if len(phrases) >= top_n:
@@ -197,7 +197,7 @@ class TopicRankExtractor(KeywordExtractor):
 
 
 class TfidfKeywordExtractor(KeywordExtractor):
-    """Corpus-level TF-IDF n-grams: useful as a third cheap view of a document."""
+    """Корпусные TF-IDF n-граммы: дешёвый дополнительный взгляд на документ."""
 
     name = "tfidf"
     tag = "[TFIDF]"
@@ -206,9 +206,9 @@ class TfidfKeywordExtractor(KeywordExtractor):
         self.ngram_range = ngram_range
         self.max_features = max_features
         self._vectorizer: TfidfVectorizer | None = None
-        self._fitted_on: int | None = None
 
     def fit(self, texts: Sequence[str]) -> TfidfKeywordExtractor:
+        """Построить словарь TF-IDF по корпусу (вызывать на train, не на test)."""
         self._vectorizer = TfidfVectorizer(
             ngram_range=self.ngram_range,
             max_features=self.max_features,
@@ -216,12 +216,11 @@ class TfidfKeywordExtractor(KeywordExtractor):
             min_df=1,
         )
         self._vectorizer.fit(texts)
-        self._fitted_on = len(texts)
         return self
 
     def extract(self, text: str, top_n: int = 15) -> list[str]:
         if self._vectorizer is None:
-            # Single-document fallback: treat the text as a tiny corpus.
+            # Нет корпуса — считаем сам документ крошечной коллекцией.
             self.fit([text, text])
         assert self._vectorizer is not None
         matrix = self._vectorizer.transform([_truncate(text)])
@@ -242,7 +241,6 @@ class TfidfKeywordExtractor(KeywordExtractor):
     ) -> list[list[str]]:
         if self._vectorizer is None:
             self.fit(texts)
-            self.fit(texts)
         assert self._vectorizer is not None
         matrix = self._vectorizer.transform(texts)
         names = self._vectorizer.get_feature_names_out()
@@ -261,7 +259,7 @@ class TfidfKeywordExtractor(KeywordExtractor):
 
 
 def _cluster_by_jaccard(phrases: Sequence[str], threshold: float) -> list[list[str]]:
-    """Greedy average-linkage style clustering on token Jaccard overlap."""
+    """Жадная кластеризация кандидатов по Jaccard-перекрытию токенов."""
     token_sets = [set(p.split()) for p in phrases]
     parent = list(range(len(phrases)))
 
@@ -288,6 +286,7 @@ def _cluster_by_jaccard(phrases: Sequence[str], threshold: float) -> list[list[s
 
 
 def _topic_distance(left: Iterable[str], right: Iterable[str], positions: dict[str, int]) -> float:
+    """Минимальный зазор между упоминаниями двух тем в списке кандидатов."""
     best = math.inf
     for a in left:
         pa = positions.get(a)
@@ -302,6 +301,7 @@ def _topic_distance(left: Iterable[str], right: Iterable[str], positions: dict[s
 
 
 def _pagerank(weights: list[list[float]], damping: float = 0.85, iters: int = 30) -> list[float]:
+    """Итеративный PageRank по плотной матрице весов рёбер."""
     n = len(weights)
     if n == 0:
         return []

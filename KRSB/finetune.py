@@ -1,13 +1,20 @@
-"""Optional HuggingFace fine-tuning of the keyword encoder, as in the KRSB notebooks."""
+"""Опциональное дообучение HuggingFace-энкодера на keyword-текстах.
+
+Соответствует этапу ``finetune_encoder`` в исходных ноутбуках KRSB:
+на каждой эпохе ``epoch_salt`` меняет подпространство фраз, теги методов
+добавляются в tokenizer как special tokens, затем веса сохраняются и
+могут быть загружены в :class:`~KRSB.encoders.BertEncoder`.
+"""
 
 from __future__ import annotations
 
 import random
 
 import numpy as np
+
 try:
     from torch.utils.data import Dataset
-except ImportError:  # optional extra; only needed for BERT fine-tuning
+except ImportError:  # torch нужен только для этого модуля
     class Dataset:  # type: ignore[no-redef]
         pass
 
@@ -16,7 +23,11 @@ from .sampling import sample_keywords_for_row
 
 
 class KWFinetuneDataset(Dataset):
-    """Each ``__getitem__`` rebuilds a keyword-text; ``epoch_salt`` changes the subspace."""
+    """Dataset, который при каждом ``__getitem__`` заново собирает keyword-текст.
+
+    ``epoch_salt`` сдвигает RNG, поэтому на разных эпохах голова видит
+    другое подпространство методов и фраз.
+    """
 
     def __init__(
         self,
@@ -40,6 +51,7 @@ class KWFinetuneDataset(Dataset):
         self.epoch_salt = 0
 
     def set_epoch(self, epoch: int) -> None:
+        """Сменить соль подпространства перед новой эпохой."""
         self.epoch_salt = int(epoch)
 
     def __len__(self) -> int:
@@ -75,7 +87,7 @@ def finetune_encoder(
     total_k: int = 40,
     max_length: int = 128,
 ):
-    """Fine-tune a sequence classifier on sampled keyword-texts, then save the encoder."""
+    """Дообучить sequence classifier на сэмплированных keyword-текстах и сохранить encoder."""
     try:
         from sklearn.metrics import accuracy_score, f1_score
         from transformers import (
