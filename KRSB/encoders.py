@@ -40,7 +40,7 @@ class TfidfEncoder(BaseEstimator, Encoder):
 
 
 class BertEncoder(Encoder):
-    """Замороженный HuggingFace-энкодер, CLS-пулинг — как в исходных ноутбуках KRSB."""
+    """Замороженный HuggingFace-энкодер с CLS-пулингом."""
 
     shared = True
 

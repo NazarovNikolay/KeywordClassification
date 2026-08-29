@@ -1,4 +1,4 @@
-"""KRSB — Keyword Random Subspace Bagging
+# KRSB — Keyword Random Subspace Bagging
 
 Краткое описание метода классификации текстов по ключевым словам.
 

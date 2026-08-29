@@ -27,8 +27,7 @@ class KRSB(KeywordEnsemble):
     4. Учит дешёвый классификатор (по умолчанию логистическая регрессия).
 
     Предсказание — среднее вероятностей (soft voting). Теги вроде ``[YAKE]``
-    оставляем, чтобы нейросетевой энкодер видел источник фразы — тот же
-    протокол, что в SciBERT-ноутбуках.
+    оставляем, чтобы нейросетевой энкодер видел источник фразы.
     """
 
     def __init__(
@@ -112,7 +111,7 @@ class KRSB(KeywordEnsemble):
 
     @property
     def heads(self):
-        """Список ``(est_seed, classifier, encoder)`` — как ``heads`` в исходных ноутбуках."""
+        """Список ``(est_seed, classifier, encoder)``."""
         return getattr(self, "heads_", [])
 
     def _encoder_for_head(self, texts: Sequence[str]) -> Encoder:

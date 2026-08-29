@@ -56,7 +56,6 @@ class YakeExtractor(KeywordExtractor):
         if not text:
             return []
         extractor = self._get_extractor(top_n)
-        # У YAKE меньше score — важнее фраза.
         scored = extractor.extract_keywords(text)
         return [phrase for phrase, _score in scored[:top_n]]
 
@@ -165,8 +164,8 @@ class TopicRankExtractor(KeywordExtractor):
                 if phrase not in freq:
                     order.append(phrase)
                 freq[phrase] = freq.get(phrase, 0) + 1
-        # Ограничиваем граф, иначе длинные посты 20 Newsgroups слишком тяжёлые.
         ranked = sorted(order, key=lambda p: (-freq[p], len(p.split()), p))
+        # Иначе граф тем на длинных документах слишком тяжёлый.
         candidates = ranked[:80]
         if not candidates:
             return []

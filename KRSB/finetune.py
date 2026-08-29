@@ -1,9 +1,8 @@
 """Опциональное дообучение HuggingFace-энкодера на keyword-текстах.
 
-Соответствует этапу ``finetune_encoder`` в исходных ноутбуках KRSB:
-на каждой эпохе ``epoch_salt`` меняет подпространство фраз, теги методов
-добавляются в tokenizer как special tokens, затем веса сохраняются и
-могут быть загружены в :class:`~KRSB.encoders.BertEncoder`.
+На каждой эпохе ``epoch_salt`` меняет подпространство фраз, теги методов
+добавляются в tokenizer как special tokens. Веса сохраняются и могут
+быть загружены в :class:`~KRSB.encoders.BertEncoder`.
 """
 
 from __future__ import annotations

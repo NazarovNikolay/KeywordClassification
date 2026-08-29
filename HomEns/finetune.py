@@ -1,8 +1,7 @@
 """Опциональное дообучение HuggingFace-классификатора на фразах одного метода.
 
-Соответствует ``SingleMethodKWDataset`` / ``train_base_classifier`` в ноутбуках
-``hom_ens``: на каждый экстрактор — свой sequence classifier, тег метода
-добавляется в tokenizer как special token.
+На каждый экстрактор — свой sequence classifier; тег метода добавляется
+в tokenizer как special token.
 """
 
 from __future__ import annotations
@@ -71,8 +70,7 @@ def train_base_classifier(
 ):
     """Дообучить sequence classifier на keyword-текстах одного метода.
 
-    Возвращает ``(trainer, tokenizer, val_f1)`` — как ``train_base_classifier``
-    в исходных ноутбуках.
+    Возвращает ``(trainer, tokenizer, val_f1)``.
     """
     try:
         import torch

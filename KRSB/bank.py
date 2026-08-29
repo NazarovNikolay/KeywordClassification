@@ -52,7 +52,7 @@ class KeywordBank:
         return self.n_docs
 
     def row(self, index: int) -> dict[str, list[str]]:
-        """Срезать все методы для одного документа: ``{method: [phrases...]}``."""
+        """Срез всех методов для одного документа: ``{method: [phrases...]}``."""
         return {name: values[index] for name, values in self.keywords.items()}
 
     def subset(self, indices: Sequence[int]) -> KeywordBank:

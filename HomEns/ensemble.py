@@ -44,7 +44,6 @@ class HomEns(KeywordEnsemble):
     4. Получает вес ``w ∝ 1 / (1 - F1_val)``.
 
     Предсказание — взвешенная сумма вероятностей (soft weighted voting).
-    Это тот же протокол, что в ноутбуках ``model/hom_ens``.
     """
 
     def __init__(
@@ -135,7 +134,7 @@ class HomEns(KeywordEnsemble):
         return soft_weighted_proba(proba_by_method, self.weights_, self.method_names_)
 
     def evaluate_combinations(self, X, y) -> pd.DataFrame:
-        """Перебрать все непустые подмножества голов — фаза 2 ноутбуков ``hom_ens``."""
+        """Перебрать все непустые подмножества голов и пересчитать веса."""
         if not getattr(self, "heads_", None):
             raise RuntimeError("HomEns must be fitted before evaluate_combinations")
         bank = self._as_bank(X, fit_extractors=False)
@@ -167,7 +166,6 @@ class HomEns(KeywordEnsemble):
 
     @property
     def heads(self) -> list[HomEnsHead]:
-        """Обученные головы — по одной на экстрактор."""
         return getattr(self, "heads_", [])
 
     def _head_proba(self, head: HomEnsHead, bank: KeywordBank) -> NDArray[np.float64]:

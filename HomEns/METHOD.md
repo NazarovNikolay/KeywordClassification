@@ -1,4 +1,4 @@
-"""HomEns — Homogeneous Ensemble of keyword classifiers
+# HomEns — Homogeneous Ensemble of keyword classifiers
 
 Краткое описание гомогенного ансамбля: одна голова на каждый метод извлечения
 ключевых слов, затем мягкое взвешенное голосование.
